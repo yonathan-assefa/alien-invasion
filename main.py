@@ -15,6 +15,9 @@ SPACESHIP_BOUNDARY = 20
 
 # Set up constants for the enemies
 ENEMY_SPEED = 2
+ENEMY_IMAGE = "img/enemy1.png"
+ENEMY_WIDTH = 64
+ENEMY_HEIGHT = 64
 
 # Set up constants for the bullets
 BULLET_SPEED = 7
@@ -45,7 +48,7 @@ class Spaceship(arcade.Sprite):
 
 class Enemy(arcade.Sprite):
     def __init__(self, x, y):
-        super().__init__("img/enemy1.png", scale=0.15)
+        super().__init__(ENEMY_IMAGE, scale=0.15)
         self.center_x = x
         self.center_y = y
         self.change_x = 0
@@ -56,11 +59,21 @@ class Enemy(arcade.Sprite):
         self.center_y += self.change_y
 
         if self.top < 0:
-            self.center_x = random.randint(64, SCREEN_WIDTH - 64)
+            self.center_x = random.randint(ENEMY_WIDTH, SCREEN_WIDTH - ENEMY_WIDTH)
             self.center_y = random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200)
             self.change_y = -ENEMY_SPEED
 
 class Bullet(arcade.Sprite):
+    def __init__(self, x, y, change_y):
+        super().__init__(BULLET_IMAGE, scale=0.15)
+        self.center_x = x
+        self.center_y = y
+        self.change_y = change_y
+
+    def update(self):
+        self.center_y += self.change_y
+
+class EnemyBullet(arcade.Sprite):
     def __init__(self, x, y, change_y):
         super().__init__(BULLET_IMAGE, scale=0.15)
         self.center_x = x
@@ -77,14 +90,16 @@ class GameWindow(arcade.Window):
         self.spaceship = None
         self.enemy_list = None
         self.bullet_list = None
+        self.enemy_bullet_list = None
 
     def setup(self):
         self.spaceship = Spaceship()
         self.enemy_list = arcade.SpriteList()
         self.bullet_list = arcade.SpriteList()
+        self.enemy_bullet_list = arcade.SpriteList()
 
         for _ in range(5):
-            enemy = Enemy(random.randint(64, SCREEN_WIDTH - 64),
+            enemy = Enemy(random.randint(ENEMY_WIDTH, SCREEN_WIDTH - ENEMY_WIDTH),
                           random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
             self.enemy_list.append(enemy)
 
@@ -93,11 +108,13 @@ class GameWindow(arcade.Window):
         self.spaceship.draw()
         self.enemy_list.draw()
         self.bullet_list.draw()
+        self.enemy_bullet_list.draw()
 
     def update(self, delta_time):
         self.spaceship.update()
         self.enemy_list.update()
         self.bullet_list.update()
+        self.enemy_bullet_list.update()
 
         # Check for collisions between bullets and enemies
         for bullet in self.bullet_list:
@@ -107,9 +124,23 @@ class GameWindow(arcade.Window):
                 for enemy in hit_list:
                     enemy.remove_from_sprite_lists()
 
-        # Check if there are no enemy ships left
-        if len(self.enemy_list) == 0:
-            self.spawn_enemy_ships()
+        # Check for collisions between spaceship and enemies
+        hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_list)
+        if hit_list:
+            self.spaceship.remove_from_sprite_lists()
+            arcade.close_window()
+
+        # Enemy bullet firing logic
+        for enemy in self.enemy_list:
+            if random.randint(1, 100) == 1:
+                enemy_bullet = EnemyBullet(enemy.center_x, enemy.center_y, -BULLET_SPEED)
+                self.enemy_bullet_list.append(enemy_bullet)
+
+        # Check for collisions between enemy bullets and spaceship
+        hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_bullet_list)
+        if hit_list:
+            self.spaceship.remove_from_sprite_lists()
+            arcade.close_window()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.LEFT:
@@ -129,12 +160,6 @@ class GameWindow(arcade.Window):
             self.spaceship.change_x = 0
         elif key == arcade.key.UP or key == arcade.key.DOWN:
             self.spaceship.change_y = 0
-
-    def spawn_enemy_ships(self):
-        for _ in range(5):
-            enemy = Enemy(random.randint(64, SCREEN_WIDTH - 64),
-                          random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            self.enemy_list.append(enemy)
 
 def main():
     window = GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
