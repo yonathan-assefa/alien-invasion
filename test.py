@@ -1,5 +1,5 @@
 import arcade
-import random
+import random 
 
 # Set up constants for the window
 SCREEN_WIDTH = 800
@@ -37,60 +37,9 @@ class Spaceship(arcade.Sprite):
         elif self.top > SCREEN_HEIGHT - SPACESHIP_BOUNDARY:
             self.top = SCREEN_HEIGHT - SPACESHIP_BOUNDARY
 
-class EnemyType1(arcade.Sprite):
+class Enemy(arcade.Sprite):
     def __init__(self, x, y):
         super().__init__("img/enemy1.png", scale=0.15)
-        self.center_x = x
-        self.center_y = y
-        self.change_x = 0
-        self.change_y = -ENEMY_SPEED
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.top < 0:
-            self.center_x = random.randint(64, SCREEN_WIDTH - 64)
-            self.center_y = random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200)
-            self.change_y = -ENEMY_SPEED
-
-class EnemyType2(arcade.Sprite):
-    def __init__(self, x, y):
-        super().__init__("img/enemy2.png", scale=0.15)
-        self.center_x = x
-        self.center_y = y
-        self.change_x = 0
-        self.change_y = -ENEMY_SPEED
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.top < 0:
-            self.center_x = random.randint(64, SCREEN_WIDTH - 64)
-            self.center_y = random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200)
-            self.change_y = -ENEMY_SPEED
-
-class EnemyType3(arcade.Sprite):
-    def __init__(self, x, y):
-        super().__init__("img/enemy3.png", scale=0.15)
-        self.center_x = x
-        self.center_y = y
-        self.change_x = 0
-        self.change_y = -ENEMY_SPEED
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.top < 0:
-            self.center_x = random.randint(64, SCREEN_WIDTH - 64)
-            self.center_y = random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200)
-            self.change_y = -ENEMY_SPEED
-
-class EnemyType4(arcade.Sprite):
-    def __init__(self, x, y):
-        super().__init__("img/enemy4.png", scale=0.15)
         self.center_x = x
         self.center_y = y
         self.change_x = 0
@@ -117,18 +66,9 @@ class GameWindow(arcade.Window):
         self.enemy_list = arcade.SpriteList()
 
         for _ in range(5):
-            enemy1 = EnemyType1(random.randint(64, SCREEN_WIDTH - 64),
-                                random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            enemy2 = EnemyType2(random.randint(64, SCREEN_WIDTH - 64),
-                                random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            enemy3 = EnemyType3(random.randint(64, SCREEN_WIDTH - 64),
-                                random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            enemy4 = EnemyType4(random.randint(64, SCREEN_WIDTH - 64),
-                                random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            self.enemy_list.append(enemy1)
-            self.enemy_list.append(enemy2)
-            self.enemy_list.append(enemy3)
-            self.enemy_list.append(enemy4)
+            enemy = Enemy(random.randint(64, SCREEN_WIDTH - 64),
+                          random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
+            self.enemy_list.append(enemy)
 
     def on_draw(self):
         arcade.start_render()
@@ -148,6 +88,12 @@ class GameWindow(arcade.Window):
             self.spaceship.change_y = SPACESHIP_SPEED
         elif key == arcade.key.DOWN:
             self.spaceship.change_y = -SPACESHIP_SPEED
+
+    def on_key_release(self, key, modifiers):
+        if key == arcade.key.LEFT or key == arcade.key.RIGHT:
+            self.spaceship.change_x = 0
+        elif key == arcade.key.UP or key == arcade.key.DOWN:
+            self.spaceship.change_y = 0
 
 def main():
     window = GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
