@@ -1,4 +1,5 @@
 import arcade
+import random
 
 # Set up constants for the window
 SCREEN_WIDTH = 800
@@ -8,6 +9,15 @@ SCREEN_TITLE = "Alien Invasion"
 # Set up constants for the spaceship
 SPACESHIP_SPEED = 5
 SPACESHIP_IMAGE = "img/spaceship.png"
+SPACESHIP_WIDTH = 64
+SPACESHIP_HEIGHT = 64
+SPACESHIP_BOUNDARY = 20
+
+# Set up constants for the enemies
+ENEMY_SPEED = 2
+ENEMY_IMAGE = "img/enemy.png"
+ENEMY_WIDTH = 64
+ENEMY_HEIGHT = 64
 
 class Spaceship(arcade.Sprite):
     def __init__(self):
@@ -18,58 +28,60 @@ class Spaceship(arcade.Sprite):
         self.change_y = 0
 
     def update(self):
-        # Update the spaceship's position based on user input or game logic
         self.center_x += self.change_x
         self.center_y += self.change_y
 
-        # Keep the spaceship within the boundaries
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
+        if self.left < SPACESHIP_BOUNDARY:
+            self.left = SPACESHIP_BOUNDARY
+        elif self.right > SCREEN_WIDTH - SPACESHIP_BOUNDARY:
+            self.right = SCREEN_WIDTH - SPACESHIP_BOUNDARY
+        if self.bottom < SPACESHIP_BOUNDARY:
+            self.bottom = SPACESHIP_BOUNDARY
+        elif self.top > SCREEN_HEIGHT - SPACESHIP_BOUNDARY:
+            self.top = SCREEN_HEIGHT - SPACESHIP_BOUNDARY
+
+class Enemy(arcade.Sprite):
+    def __init__(self, x, y):
+        super().__init__(ENEMY_IMAGE, scale=0.15)
+        self.center_x = x
+        self.center_y = y
+        self.change_x = 0
+        self.change_y = -ENEMY_SPEED
+
+    def update(self):
+        self.center_x += self.change_x
+        self.center_y += self.change_y
+
+        # If the enemy reaches the bottom of the screen, reset its position
+        if self.top < 0:
+            self.center_x = random.randint(ENEMY_WIDTH, SCREEN_WIDTH - ENEMY_WIDTH)
+            self.center_y = random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200)
+            self.change_y = -ENEMY_SPEED
 
 class GameWindow(arcade.Window):
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
         arcade.set_background_color(arcade.color.BLACK)
         self.spaceship = None
+        self.enemy_list = None
 
     def setup(self):
-        # Set up your game here, such as initializing variables and loading resources
         self.spaceship = Spaceship()
+        self.enemy_list = arcade.SpriteList()
+
+        for _ in range(5):  # Adjust the number of enemies as desired
+            enemy = Enemy(random.randint(ENEMY_WIDTH, SCREEN_WIDTH - ENEMY_WIDTH),
+                          random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
+            self.enemy_list.append(enemy)
 
     def on_draw(self):
-        # Render the screen here
         arcade.start_render()
-
-        # Draw the spaceship
         self.spaceship.draw()
+        self.enemy_list.draw()
 
     def update(self, delta_time):
-        # Update the game logic here
         self.spaceship.update()
-
-    def on_key_press(self, key, modifiers):
-        # Handle key press events
-        if key == arcade.key.LEFT:
-            self.spaceship.change_x = -SPACESHIP_SPEED
-        elif key == arcade.key.RIGHT:
-            self.spaceship.change_x = SPACESHIP_SPEED
-        elif key == arcade.key.UP:
-            self.spaceship.change_y = SPACESHIP_SPEED
-        elif key == arcade.key.DOWN:
-            self.spaceship.change_y = -SPACESHIP_SPEED
-
-    def on_key_release(self, key, modifiers):
-        # Handle key release events
-        if key == arcade.key.LEFT or key == arcade.key.RIGHT:
-            self.spaceship.change_x = 0
-        elif key == arcade.key.UP or key == arcade.key.DOWN:
-            self.spaceship.change_y = 0
+        self.enemy_list.update()
 
 def main():
     window = GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
