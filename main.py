@@ -182,7 +182,7 @@ class GameWindow(arcade.Window):
         self.remaining_life_sprite = arcade.Sprite(REMAINING_LIFE_IMAGE, scale=0.05)  # Create the remaining life sprite
         self.remaining_life_sprite.position = 20, SCREEN_HEIGHT - 20  # Set the position of the remaining life sprite
         self.remaining_life_sprite_list = arcade.SpriteList()  # Create a sprite list to hold the remaining life sprite
-        self.remaining_life = MAX_LIFE  # Set the initial remaining life
+        self.remaining_life = 3  # Set the initial remaining life
 
         self.remaining_life_sprites = []  # List to hold the remaining life sprites
 
@@ -193,22 +193,15 @@ class GameWindow(arcade.Window):
         self.enemy_bullet_list = arcade.SpriteList()
         self.powerup_list = arcade.SpriteList()
         self.explosion_list = arcade.SpriteList()
-        self.remaining_life = MAX_LIFE  # Reset the remaining life when setting up the game
         self.create_remaining_life_sprites()  # Create the initial remaining life sprites
 
     def create_remaining_life_sprites(self):
         # Clear the previous remaining life sprites
         self.remaining_life_sprites = []
-
         # Create the remaining life sprites based on the remaining_life count
         for _ in range(self.remaining_life):
             life_sprite = arcade.Sprite("img/remaining.png", scale=0.05)
             self.remaining_life_sprites.append(life_sprite)
-
-        for _ in range(self.remaining_life):
-            enemy = Enemy(random.randint(ENEMY_WIDTH, SCREEN_WIDTH - ENEMY_WIDTH),
-                          random.randint(SCREEN_HEIGHT, SCREEN_HEIGHT + 200))
-            self.enemy_list.append(enemy)
 
     def on_draw(self):
         arcade.start_render()
@@ -331,7 +324,8 @@ class GameWindow(arcade.Window):
         # Check for collisions between spaceship and enemies
         hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_list)
         if hit_list:
-            self.life -= 1
+            self.remaining_life -= 1
+            self.update_remaining_life_sprite(1)  # Update the remaining life sprite
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
                 explosion = Explosion(enemy.center_x, enemy.center_y)
@@ -339,21 +333,18 @@ class GameWindow(arcade.Window):
                 if self.remaining_life <= 0:
                     self.game_over = True
                     self.spaceship.remove_from_sprite_lists()
-        
-        
-        if self.remaining_life <= 0:  # Check for remaining life instead of `life`
-            self.game_over = True
-            self.spaceship.remove_from_sprite_lists()
 
         # Check for collisions between spaceship and enemy bullets
         hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_bullet_list)
         if hit_list:
-            self.life -= 1
+            self.remaining_life -= 1
+            self.update_remaining_life_sprite(1)  # Update the remaining life sprite
             for bullet in hit_list:
                 bullet.remove_from_sprite_lists()
-                if self.life <= 0:
+                if self.remaining_life <= 0:
                     self.game_over = True
                     self.spaceship.remove_from_sprite_lists()
+
 
         # Check for collisions between bullets and power-ups
         for bullet in self.bullet_list:
@@ -374,8 +365,9 @@ class GameWindow(arcade.Window):
             for powerup in hit_list:
                 if powerup.powerup_type == POWERUP_TYPE_LIFE:
                     self.remaining_life = min(MAX_LIFE, self.remaining_life + 1)  # Increase remaining life (up to maximum)
+                    self.update_remaining_life_sprite(0)  # Update the remaining life sprite
+
                 powerup.remove_from_sprite_lists()
-            self.update_remaining_life_sprite()  # Update the remaining life sprite
 
         # Remove excess bullets if bullet_list exceeds bullet_limit
         while len(self.bullet_list) > self.bullet_limit:
@@ -392,7 +384,7 @@ class GameWindow(arcade.Window):
 
         # Spawn power-ups randomly
         if random.randint(1, 500) == 1:
-            powerup_type = random.choice([POWERUP_TYPE_EXTRA_BULLETS, POWERUP_TYPE_PENETRATING_BULLETS])
+            powerup_type = random.choice([POWERUP_TYPE_EXTRA_BULLETS, POWERUP_TYPE_PENETRATING_BULLETS, POWERUP_TYPE_LIFE])
             powerup = PowerUp(
                 random.randint(POWERUP_WIDTH, SCREEN_WIDTH - POWERUP_WIDTH),
                 SCREEN_HEIGHT + POWERUP_HEIGHT,
@@ -400,13 +392,20 @@ class GameWindow(arcade.Window):
             )
             self.powerup_list.append(powerup)
     
-    def update_remaining_life_sprite(self):
-        self.remaining_life_sprite_list = arcade.SpriteList()  # Clear the remaining life sprite list
+    def update_remaining_life_sprite(self, state):
+        if state:
+            if self.remaining_life_sprites: 
+                self.remaining_life_sprites.pop()  # Clear the remaining life sprite list
+        else:
+            if len(self.remaining_life_sprites) < 5:
+                life_sprite = arcade.Sprite("img/remaining.png", scale=0.05)
+                self.remaining_life_sprites.append(life_sprite)
 
-        for i in range(self.remaining_life):
-            life_sprite = arcade.Sprite("img/remaining.png", scale=0.05)
-            life_sprite.left = 20 + (i * (life_sprite.width + 5))  # Set the position of each life sprite
-            self.remaining_life_sprite_list.append(life_sprite)  # Add the life sprite to the list
+        # for i in range(self.remaining_life):
+            # life_sprite = arcade.Sprite(REMAINING_LIFE_IMAGE, scale=0.05)
+            # life_sprite.left = 20 + (i * (life_sprite.width + 5))  # Set the position of each life sprite
+            # life_sprite.bottom = 20  # Adjust the vertical position of the life sprite
+            # self.remaining_life_sprite_list.append(life_sprite)  # Add the life sprite to the list
 
 
 def main():
