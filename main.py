@@ -56,9 +56,6 @@ EXPLOSION_COLUMNS = 16
 EXPLOSION_ROWS = 16
 
 
-# Font style
-font = arcade.load_font("fonts/arcade.ttf")
-
 class Explosion(arcade.Sprite):
     def __init__(self, x, y):
         super().__init__(EXPLOSION_IMAGE, scale=0.5)
@@ -183,11 +180,15 @@ class GameWindow(arcade.Window):
         self.explosion_list = None
         self.extra_bullets_powerup = False
         self.penetrating_bullets_powerup = False
+        
+        
         self.bullet_limit = 6
+        
         self.life = 3  # Number of lives for the spaceship
         self.game_over = False  # Flag to track game over state
         self.is_firing = False  # Flag to track if the spaceship is firing
         self.last_bullet_shot_time = 0  # Track the time when the last bullet was shot
+
         self.current_score = 0  # Initialize current_score to 0
 
         self.remaining_life_sprite = arcade.Sprite(REMAINING_LIFE_IMAGE, scale=0.05)  # Create the remaining life sprite
@@ -200,7 +201,10 @@ class GameWindow(arcade.Window):
         self.game_started = False
         self.top_score = self.db_handler.get_top_scores()[0][0]
         self.opening_sound = arcade.load_sound("sound/hell.ogg")
-        self.playing_sound = arcade.play_sound(self.opening_sound)
+        self.playing_sound = arcade.play_sound(self.opening_sound, looping=True)
+
+        # Bullet firing difference
+        self.bullet_firing_difference = 0.25
 
     def setup(self):
         self.spaceship = Spaceship()
@@ -358,12 +362,16 @@ class GameWindow(arcade.Window):
 
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if not self.game_started or self.game_over:
-            if SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100:
-                if SCREEN_HEIGHT // 2 - 120 <= y <= SCREEN_HEIGHT // 2 - 80:
-                    self.start_game()
-                elif SCREEN_HEIGHT // 2 - 170 <= y <= SCREEN_HEIGHT // 2 - 130:
-                    self.view_top_scores()
+        # if not self.game_started or self.game_over:
+        if SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100:
+            if SCREEN_HEIGHT // 2 - 120 <= y <= SCREEN_HEIGHT // 2 - 80:
+                click_sound = arcade.load_sound("sound/click.mp3")
+                arcade.play_sound(click_sound)
+                self.start_game()
+            elif SCREEN_HEIGHT // 2 - 170 <= y <= SCREEN_HEIGHT // 2 - 130:
+                click_sound = arcade.load_sound("sound/click.mp3")
+                arcade.play_sound(click_sound)
+                self.view_top_scores()
 
     # Key press
     def on_key_press(self, key, modifiers):
@@ -436,7 +444,7 @@ class GameWindow(arcade.Window):
             time_difference = current_time - self.last_bullet_shot_time
 
             # Fire a bullet if enough time has passed since the last bullet was shot
-            if time_difference >= 0.25:  # Adjust the time interval as desired
+            if time_difference >= self.bullet_firing_difference:  # Adjust the time interval as desired
                 self.last_bullet_shot_time = current_time
 
                 if self.extra_bullets_powerup:
@@ -487,7 +495,20 @@ class GameWindow(arcade.Window):
                         arcade.play_sound(laser_sound)
             for bullet in self.bullet_list:
                 bullet.check_collision(self.enemy_list)
-            
+          
+            # Check for collisions between spaceship and enemy bullets
+            hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_bullet_list)
+            if hit_list:
+                if self.game_started and not self.game_over:
+                    laser_sound = arcade.load_sound("sound/sp exploded.wav")
+                    arcade.play_sound(laser_sound)
+                self.remaining_life -= 1
+                self.update_remaining_life_sprite(1)  # Update the remaining life sprite
+                for bullet in hit_list:
+                    bullet.remove_from_sprite_lists()  # Remove the bullet from enemy_bullet_list
+                if self.remaining_life <= 0:
+                    self.game_over = True
+                    self.spaceship.remove_from_sprite_lists()
 
             # Check for collisions between spaceship and enemies
             hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_list)
@@ -507,26 +528,6 @@ class GameWindow(arcade.Window):
                     laser_sound = arcade.load_sound("sound/hit.mp3")
                     arcade.play_sound(laser_sound)
 
-            # Check for collisions between spaceship and enemy bullets
-            hit_list = arcade.check_for_collision_with_list(self.spaceship, self.enemy_bullet_list)
-            if hit_list:
-                if self.game_started and not self.game_over:
-                    laser_sound = arcade.load_sound("sound/hit.mp3")
-                    arcade.play_sound(laser_sound)
-                self.remaining_life -= 1
-                self.update_remaining_life_sprite(1)  # Update the remaining life sprite
-                for bullet in hit_list:
-                    # laser_sound = arcade.load_sound("sound/hit.mp3")
-                    # arcade.play_sound(laser_sound)
-                    if self.remaining_life <= 0:
-                        self.game_over = True
-                        self.spaceship.remove_from_sprite_lists()
-                        if self.game_started and not self.game_over:
-                            laser_sound = arcade.load_sound("sound/sp exploded.wav")
-                            arcade.play_sound(laser_sound)
-
-
-
             # Check for collisions between bullets and power-ups
             for bullet in self.bullet_list:
                 hit_list = arcade.check_for_collision_with_list(bullet, self.powerup_list)
@@ -535,8 +536,12 @@ class GameWindow(arcade.Window):
                     for powerup in hit_list:
                         if powerup.powerup_type == POWERUP_TYPE_EXTRA_BULLETS:
                             self.bullet_limit = 6  # Increase bullet limit to 6
+                            if self.bullet_firing_difference > 0.1:
+                                self.bullet_firing_difference -= 0.05
                         elif powerup.powerup_type == POWERUP_TYPE_PENETRATING_BULLETS:
                             self.penetrating_bullets_powerup = True
+                            if self.bullet_firing_difference > 0.1:
+                                self.bullet_firing_difference -= 0.05
                         powerup.remove_from_sprite_lists()
 
 
