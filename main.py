@@ -306,6 +306,7 @@ class GameWindow(arcade.Window):
                 )
             else:
                 # Game over screen
+            
                 game_over_image = arcade.load_texture("img/game_over.png")
                 arcade.draw_texture_rectangle(
                     SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2,
@@ -325,6 +326,10 @@ class GameWindow(arcade.Window):
                     align='center',
                     width=800,
                 )
+
+                
+
+
              
     
     def draw_home_page(self):
