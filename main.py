@@ -536,11 +536,11 @@ class GameWindow(arcade.Window):
                     for powerup in hit_list:
                         if powerup.powerup_type == POWERUP_TYPE_EXTRA_BULLETS:
                             self.bullet_limit = 6  # Increase bullet limit to 6
-                            if self.bullet_firing_difference > 0.1:
+                            if self.bullet_firing_difference > 0.15:
                                 self.bullet_firing_difference -= 0.05
                         elif powerup.powerup_type == POWERUP_TYPE_PENETRATING_BULLETS:
                             self.penetrating_bullets_powerup = True
-                            if self.bullet_firing_difference > 0.1:
+                            if self.bullet_firing_difference > 0.15:
                                 self.bullet_firing_difference -= 0.05
                         powerup.remove_from_sprite_lists()
 
@@ -551,6 +551,8 @@ class GameWindow(arcade.Window):
                 for powerup in hit_list:
                     if powerup.powerup_type == POWERUP_TYPE_LIFE:
                         self.remaining_life = min(MAX_LIFE, self.remaining_life + 1)  # Increase remaining life (up to maximum)
+                        life_sprite = arcade.Sprite("img/remaining.png", scale=0.05)
+                        self.remaining_life_sprite_list.append(life_sprite)
                         self.update_remaining_life_sprite(0)  # Update the remaining life sprite
 
                     powerup.remove_from_sprite_lists()
