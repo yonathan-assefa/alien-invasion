@@ -199,7 +199,10 @@ class GameWindow(arcade.Window):
         self.remaining_life_sprites = []  # List to hold the remaining life sprites
 
         self.game_started = False
-        self.top_score = self.db_handler.get_top_scores()[0][0]
+        try:
+            self.top_score = self.db_handler.get_top_scores()[0][0]
+        except:
+            self.top_score = 0
         self.opening_sound = arcade.load_sound("sound/hell.ogg")
         self.playing_sound = arcade.play_sound(self.opening_sound, looping=True)
 
@@ -217,9 +220,12 @@ class GameWindow(arcade.Window):
         self.current_score = 0
         self.remaining_life = 3
         self.create_remaining_life_sprites()
+        self.bullet_firing_difference = 0.25
         
-        self.top_score = self.db_handler.get_top_scores()[0][0]
-
+        try:
+            self.top_score = self.db_handler.get_top_scores()[0][0]
+        except:
+            self.top_score = 0
         
 
    
